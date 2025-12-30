@@ -1,0 +1,36 @@
+# Archivos de configuración sensibles
+
+
+# Archivos subidos
+imagenes/carnes/*
+imagenes/cafe/*
+!imagenes/carnes/.gitkeep
+!imagenes/cafe/.gitkeep
+
+# Logs
+*.log
+
+# Archivos temporales
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Archivos de editor
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Herramienta de hash (eliminar en producción)
+generar_hash.php
+
+# Backups
+*.backup
+*.bak
+*.sql.gz
