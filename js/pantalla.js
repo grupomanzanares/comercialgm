@@ -79,8 +79,14 @@ class PantallaDigital {
             const data = await response.json();
             
             if (data.success && data.contenido.length > 0) {
+                const contenidoAnterior = this.contenido.length;
                 this.contenido = data.contenido;
                 console.log(`Contenido cargado: ${this.contenido.length} items`);
+                
+                // Si el índice actual es mayor que el nuevo contenido, reiniciar
+                if (this.indiceActual >= this.contenido.length) {
+                    this.indiceActual = 0;
+                }
                 
                 if (mostrarLoading) {
                     this.loading.classList.add('hidden');
@@ -89,7 +95,9 @@ class PantallaDigital {
                 return true;
             } else {
                 console.log('No hay contenido disponible');
-                this.contenido = [];
+                if (this.contenido.length === 0) {
+                    this.contenido = [];
+                }
                 return false;
             }
         } catch (error) {
@@ -209,18 +217,20 @@ class PantallaDigital {
     }
     
     siguiente() {
+        console.log(`Avanzando al siguiente contenido. Índice actual: ${this.indiceActual}`);
+        
         this.indiceActual++;
         
+        // Si llegamos al final, volver al inicio
         if (this.indiceActual >= this.contenido.length) {
+            console.log('Fin del contenido, reiniciando desde el principio');
             this.indiceActual = 0;
-            
-            // Recargar contenido al completar ciclo
-            this.cargarContenido(false).then(() => {
-                this.mostrarContenido();
-            });
-        } else {
-            this.mostrarContenido();
         }
+        
+        console.log(`Nuevo índice: ${this.indiceActual}`);
+        
+        // Mostrar el siguiente contenido
+        this.mostrarContenido();
     }
     
     mostrarMensajeSinContenido() {
