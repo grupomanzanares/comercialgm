@@ -283,8 +283,12 @@ class PantallaDigital {
         iframeContainer.style.height = '100%';
         iframeContainer.style.position = 'relative';
         
+        // Generar ID único para el iframe
+        const iframeId = 'youtube-player-' + Date.now();
+        
         const iframe = document.createElement('iframe');
-        iframe.src = item.url;
+        iframe.id = iframeId;
+        iframe.src = item.url + '&origin=' + window.location.origin;
         iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen';
         iframe.allowFullscreen = true;
         iframe.setAttribute('allowfullscreen', '');
@@ -294,23 +298,70 @@ class PantallaDigital {
         iframe.style.height = '100%';
         iframe.style.border = 'none';
         
-        // Intentar forzar la reproducción mediante interacción simulada
+        // Variable para controlar si ya avanzamos
+        let yaAvanzo = false;
+        
+        // Función para avanzar (solo una vez)
+        const avanzarSiguiente = () => {
+            if (!yaAvanzo) {
+                yaAvanzo = true;
+                console.log('Video terminado, avanzando al siguiente contenido...');
+                this.siguiente();
+            }
+        };
+        
         iframe.onload = () => {
-            console.log('Video cargado');
+            console.log('Video de YouTube cargado');
             
-            // Simular click en el iframe después de cargarlo
+            // Método 1: Listener global para mensajes de YouTube (el más confiable)
+            const messageHandler = (event) => {
+                if (event.origin !== 'https://www.youtube.com') return;
+                
+                try {
+                    let data;
+                    if (typeof event.data === 'string') {
+                        data = JSON.parse(event.data);
+                    } else {
+                        data = event.data;
+                    }
+                    
+                    // YouTube envía playerState en el objeto info
+                    // Estado 0 = video terminado
+                    // Estado 1 = reproduciendo
+                    // Estado 2 = pausado
+                    if (data.event === 'onStateChange' && data.info === 0) {
+                        console.log('YouTube API: Video terminado (state 0)');
+                        window.removeEventListener('message', messageHandler);
+                        avanzarSiguiente();
+                    } else if (data.info && data.info.playerState === 0) {
+                        console.log('YouTube API: Video terminado (playerState 0)');
+                        window.removeEventListener('message', messageHandler);
+                        avanzarSiguiente();
+                    }
+                } catch (e) {
+                    // Ignorar errores de parsing
+                }
+            };
+            
+            window.addEventListener('message', messageHandler);
+            
+            // Método 2: Comando para iniciar reproducción
             setTimeout(() => {
                 try {
+                    iframe.contentWindow.postMessage('{"event":"listening","id":"' + iframeId + '"}', '*');
                     iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
                 } catch(e) {
-                    console.log('No se pudo controlar el video via postMessage');
+                    console.log('No se pudo enviar comando al video');
                 }
             }, 1000);
             
-            // Rotar después de 5 minutos
+            // Método 3: Timeout de seguridad (fallback)
+            // Si después de 10 minutos no ha avanzado, forzar avance
             setTimeout(() => {
-                this.siguiente();
-            }, 300000);
+                console.log('Timeout de seguridad: 10 minutos alcanzados');
+                window.removeEventListener('message', messageHandler);
+                avanzarSiguiente();
+            }, 600000); // 10 minutos
         };
         
         iframeContainer.appendChild(iframe);

@@ -69,21 +69,20 @@ try {
         
         $video_id = extraerIdYouTube($youtube_url);
         // Usar youtube.com estándar - funciona tanto en HTTP local como HTTPS internet
-        // YouTube.com maneja automáticamente HTTP y HTTPS
+        // SIN LOOP - para que pase al siguiente contenido cuando termine
         $url = 'https://www.youtube.com/embed/' . $video_id . 
                '?autoplay=1' .           // Reproducción automática
                '&mute=1' .                // Silenciado (requerido para autoplay)
-               '&loop=1' .                // Repetir video
-               '&playlist=' . $video_id . // Necesario para loop
                '&controls=0' .            // Ocultar controles
                '&showinfo=0' .            // Ocultar información
                '&modestbranding=1' .      // Minimizar branding de YouTube
                '&playsinline=1' .         // Reproducir inline en móviles
-               '&enablejsapi=1' .         // Habilitar API JavaScript
+               '&enablejsapi=1' .         // Habilitar API JavaScript (necesario para detectar fin)
                '&rel=0' .                 // No mostrar videos relacionados
                '&iv_load_policy=3' .      // Ocultar anotaciones
                '&fs=0' .                  // Deshabilitar botón fullscreen de YouTube
-               '&disablekb=1';            // Deshabilitar controles de teclado
+               '&disablekb=1' .           // Deshabilitar controles de teclado
+               '&widget_referrer=' . urlencode($_SERVER['HTTP_HOST']); // Permitir comunicación API
         $duracion = 0; // Los videos de YouTube controlan su propia duración
     }
     
