@@ -16,6 +16,9 @@ class PantallaDigital {
         // Mostrar overlay de inicio para permitir autoplay
         this.mostrarOverlayInicio();
         
+        // Detectar cuando se sale de pantalla completa
+        this.detectarSalidaPantallaCompleta();
+        
         // Ocultar cursor después de 3 segundos de inactividad
         this.configurarCursor();
         
@@ -26,6 +29,80 @@ class PantallaDigital {
         setInterval(() => {
             this.cargarContenido(false);
         }, 300000); // 5 minutos
+    }
+    
+    detectarSalidaPantallaCompleta() {
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) {
+                this.mostrarBotonPantallaCompleta();
+            } else {
+                this.ocultarBotonPantallaCompleta();
+            }
+        });
+        
+        document.addEventListener('webkitfullscreenchange', () => {
+            if (!document.webkitFullscreenElement) {
+                this.mostrarBotonPantallaCompleta();
+            } else {
+                this.ocultarBotonPantallaCompleta();
+            }
+        });
+        
+        document.addEventListener('mozfullscreenchange', () => {
+            if (!document.mozFullScreenElement) {
+                this.mostrarBotonPantallaCompleta();
+            } else {
+                this.ocultarBotonPantallaCompleta();
+            }
+        });
+    }
+    
+    mostrarBotonPantallaCompleta() {
+        // Evitar crear múltiples botones
+        if (document.getElementById('btn-fullscreen')) return;
+        
+        const button = document.createElement('button');
+        button.id = 'btn-fullscreen';
+        button.innerHTML = '⛶ Pantalla Completa';
+        button.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 30px;
+            background: rgba(102, 126, 234, 0.95);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            z-index: 9998;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+        `;
+        
+        button.addEventListener('mouseenter', () => {
+            button.style.background = 'rgba(102, 126, 234, 1)';
+            button.style.transform = 'scale(1.05)';
+        });
+        
+        button.addEventListener('mouseleave', () => {
+            button.style.background = 'rgba(102, 126, 234, 0.95)';
+            button.style.transform = 'scale(1)';
+        });
+        
+        button.addEventListener('click', async () => {
+            await this.activarPantallaCompleta();
+        });
+        
+        document.body.appendChild(button);
+    }
+    
+    ocultarBotonPantallaCompleta() {
+        const button = document.getElementById('btn-fullscreen');
+        if (button) {
+            button.remove();
+        }
     }
     
     mostrarOverlayInicio() {
@@ -50,11 +127,15 @@ class PantallaDigital {
                 <div style="font-size: 80px; margin-bottom: 20px;">▶️</div>
                 <h2 style="font-size: 36px; margin-bottom: 15px;">Toca para iniciar</h2>
                 <p style="font-size: 20px; color: #ccc;">Pantalla ${this.tipo === 'carnes' ? 'Carnes' : 'Café'}</p>
+                <p style="font-size: 16px; color: #999; margin-top: 10px;">Se activará pantalla completa automáticamente</p>
             </div>
         `;
         
-        overlay.addEventListener('click', () => {
+        overlay.addEventListener('click', async () => {
             overlay.remove();
+            
+            // Activar pantalla completa
+            await this.activarPantallaCompleta();
             
             // Mostrar primer contenido después de la interacción
             if (this.contenido.length > 0) {
@@ -65,6 +146,27 @@ class PantallaDigital {
         });
         
         document.body.appendChild(overlay);
+    }
+    
+    async activarPantallaCompleta() {
+        try {
+            const elem = document.documentElement;
+            
+            if (elem.requestFullscreen) {
+                await elem.requestFullscreen();
+            } else if (elem.webkitRequestFullscreen) { // Safari
+                await elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) { // IE11
+                await elem.msRequestFullscreen();
+            } else if (elem.mozRequestFullScreen) { // Firefox
+                await elem.mozRequestFullScreen();
+            }
+            
+            console.log('Pantalla completa activada');
+        } catch (error) {
+            console.log('No se pudo activar pantalla completa:', error);
+            // No es crítico, continuar de todos modos
+        }
     }
     
     async cargarContenido(mostrarLoading = true) {
